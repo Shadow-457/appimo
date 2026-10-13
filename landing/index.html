@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appimo — Turn any AppImage into a real app</title>
+<meta name="description" content="Appimo gives any AppImage a launcher in your start menu, its own icon and a stable home. One command or one click, per-user, no root, on any Linux distro.">
+<link rel="canonical" href="https://appimo.dev/">
+<meta name="theme-color" content="#1A1815">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://appimo.dev/">
+<meta property="og:title" content="Appimo — Turn any AppImage into a real app">
+<meta property="og:description" content="A launcher in your start menu, the right icon, the right name. One command, or one click — on any Linux distro.">
+<meta property="og:image" content="https://appimo.dev/assets/appimo-banner.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Appimo — Turn any AppImage into a real app">
+<meta name="twitter:description" content="A launcher in your start menu, the right icon, the right name. One command, or one click — on any Linux distro.">
+<meta name="twitter:image" content="https://appimo.dev/assets/appimo-banner.png">
+
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="assets/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/appimo-icon-180.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="stylesheet" href="styles.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Appimo",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Linux",
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "description": "Turns any AppImage into a real, installed application with a launcher in the start menu.",
+  "softwareVersion": "0.1.0",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "url": "https://appimo.dev/"
+}
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <img src="assets/appimo-icon-256.png" alt="" width="32" height="32">
+      <span>appimo</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#distros">Distros</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/appimo/appimo">GitHub</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="#install">Install</a>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ── Hero ─────────────────────────────────────────────────────── -->
+<section class="hero" id="install">
+  <div class="wrap">
+    <h1>Turn any AppImage<br>into a real app.</h1>
+
+    <p class="lede">
+      A launcher in your start menu, the right icon, the right name, in a place
+      that survives a reboot. One command, or one click — on any Linux distro.
+    </p>
+
+    <div class="terminal" id="command">
+      <div class="terminal-bar">
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="terminal-title">install</span>
+        <button class="copy" type="button" data-copy="curl -fsSL https://appimo.vercel.app/install.sh | sh">
+          <span class="copy-label">Copy</span>
+        </button>
+      </div>
+      <pre><code><span class="prompt">$</span> curl -fsSL https://appimo.vercel.app/install.sh | sh</code></pre>
+    </div>
+    <p class="copy-status" role="status" aria-live="polite"></p>
+
+    <p class="alt-install">
+      Prefer to read it first?
+      <code>curl -fsSLO https://appimo.vercel.app/install.sh &amp;&amp; less install.sh</code>
+      — or <code>pipx install appimo</code>.
+    </p>
+
+    <ul class="chips" aria-label="Supported platforms">
+      <li>Ubuntu</li><li>Debian</li><li>Fedora</li><li>Arch</li>
+      <li>openSUSE</li><li>immutable</li>
+    </ul>
+
+    <p class="noroot">No root. Ever.</p>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/appimo/appimo">Star on GitHub</a>
+      <a class="btn btn-ghost" href="#how">See how it works ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Problem ──────────────────────────────────────────────────── -->
+<section class="section" id="problem">
+  <div class="wrap">
+    <h2>An AppImage isn't an installation. It's a file.</h2>
+    <p class="section-lede">
+      It never asked to be in your menu. So it isn't. No launcher, no icon, no
+      search result, no <code>apt remove</code> — just another 200 MB in
+      <code>~/Downloads</code> that you keep re-downloading because you can't
+      remember where you put it.
+    </p>
+
+    <div class="grid grid-3">
+      <article class="card">
+        <h3>Invisible to your launcher</h3>
+        <p>No <code>.desktop</code> entry means no result in search, no pin in
+        the dock, no tile in Activities. The app exists; the desktop doesn't
+        know it.</p>
+      </article>
+      <article class="card">
+        <h3>Anonymous to your icon theme</h3>
+        <p>Every other app has a name and a picture. Yours has whatever
+        <code>Downloads/Inkscape-1.4-x86_64.AppImage</code> says.</p>
+      </article>
+      <article class="card">
+        <h3>Orphaned in Downloads</h3>
+        <p>Nothing updates it, nothing tracks it, nothing uninstalls it. When
+        the version on disk dies, nothing tells you.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ─────────────────────────────────────────────── -->
+<section class="section section-alt" id="how">
+  <div class="wrap">
+    <h2>Three steps, once per app.</h2>
+
+    <div class="split">
+      <ol class="steps">
+        <li>
+          <h3>Point</h3>
+          <p>Give Appimo an <code>.AppImage</code> — a path in the terminal, or
+          a drag into the window.</p>
+        </li>
+        <li>
+          <h3>Integrate</h3>
+          <p>It reads the bundle's own desktop file and icon, puts the file
+          somewhere stable, and writes the launcher.</p>
+        </li>
+        <li>
+          <h3>Launch</h3>
+          <p>The app appears in your start menu like it was always there.
+          <code>appimo remove</code> takes it all away again.</p>
+        </li>
+      </ol>
+
+      <div class="terminal terminal-tall">
+        <div class="terminal-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="terminal-title">bash</span>
+        </div>
+        <pre><code><span class="prompt">$</span> appimo install ~/Downloads/Cursor-0.45.AppImage
+
+  <span class="k">reading</span>   Cursor-0.45.AppImage
+  <span class="k">name</span>      Cursor
+  <span class="k">id</span>        dev.appimo.cursor
+  <span class="k">icon</span>      found 256x256 PNG
+  <span class="k">moved</span>     ~/Applications/Cursor.AppImage
+  <span class="k">launcher</span>  ~/.local/share/applications/
+            dev.appimo.cursor.desktop
+
+  <span class="ok">✓</span> Launch "Cursor" from your start menu
+
+<span class="prompt">$</span> appimo remove cursor</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ─────────────────────────────────────────────────── -->
+<section class="section" id="features">
+  <div class="wrap">
+    <h2>Built like a Linux tool, not a wrapper around one.</h2>
+
+    <div class="grid grid-4">
+      <article class="card">
+        <h3>CLI and GUI</h3>
+        <p><code>appimo</code> for your terminal, <code>appimo gui</code> for a
+        window. One engine, so they never disagree.</p>
+      </article>
+      <article class="card">
+        <h3>No root, ever</h3>
+        <p>Everything lands in <code>~/.local</code> and
+        <code>~/Applications</code>. Nothing touches <code>/usr</code>, so
+        nothing fights your package manager.</p>
+      </article>
+      <article class="card">
+        <h3>Any distro</h3>
+        <p>Ubuntu, Debian, Fedora, Arch, openSUSE — and immutable images like
+        Silverblue, Kinoite, Bazzite and SteamOS.</p>
+      </article>
+      <article class="card">
+        <h3>Keep or unpack</h3>
+        <p>Leave the AppImage intact, or unpack it for systems without working
+        FUSE. It's reversible either way.</p>
+      </article>
+      <article class="card">
+        <h3>Real metadata</h3>
+        <p>Name, icon, categories and MIME types read from the bundle itself —
+        never guessed from the filename.</p>
+      </article>
+      <article class="card">
+        <h3>Never executes the bundle</h3>
+        <p>Metadata is read straight out of the SquashFS at its offset. It does
+        not run a file you just downloaded to ask what it is.</p>
+      </article>
+      <article class="card">
+        <h3>Clean uninstall</h3>
+        <p><code>appimo remove</code> takes out the launcher, the icon and the
+        file. Nothing left behind to find later.</p>
+      </article>
+      <article class="card">
+        <h3>Scriptable</h3>
+        <p><code>--json</code>, <code>--dry-run</code>, real exit codes, and
+        <code>appimo doctor</code> when an old AppImage won't mount.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── GUI ──────────────────────────────────────────────────────── -->
+<section class="section section-alt" id="gui">
+  <div class="wrap">
+    <div class="split split-reverse">
+      <div>
+        <h2>Or don't touch the terminal at all.</h2>
+        <p class="section-lede">
+          Drop an AppImage on the window, check the name and icon Appimo found,
+          and click <strong>Integrate</strong>. Everything the CLI does, with a
+          preview of exactly what it's about to change before it changes it.
+        </p>
+        <ul class="ticks">
+          <li>Preview the plan first — nothing is written until you say so</li>
+          <li>Pick your own name, or use the bundle's</li>
+          <li>Unpack or keep, copy or move, per app</li>
+          <li>Every integrated app listed, with one-click removal</li>
+        </ul>
+        <p class="muted">Included with the CLI: <code>appimo gui</code></p>
+      </div>
+
+      <figure class="window shot">
+        <div class="window-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="window-title">Appimo</span>
+        </div>
+        <img src="assets/appimo-gui.png" width="900" height="620"
+             alt="The Appimo graphical interface: a field to choose an AppImage, options to unpack or copy it, Preview and Integrate buttons, a panel showing what will change, and the list of integrated applications."
+             loading="lazy" decoding="async">
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ── Distros ──────────────────────────────────────────────────── -->
+<section class="section" id="distros">
+  <div class="wrap">
+    <h2>Any distro. Here's the honest list.</h2>
+    <p class="section-lede">
+      Appimo only ever writes to your home directory, so it behaves the same on
+      a conventional system and on a read-only one. We'd rather label an
+      untested distro than claim one.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">System</th><th scope="col">Status</th><th scope="col">Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Ubuntu / Debian</td><td><span class="tag tag-ok">Tested</span></td><td>Per-user install; FUSE 2 is <code>libfuse2t64</code> on 24.04+</td></tr>
+          <tr><td>Fedora / RHEL</td><td><span class="tag tag-ok">Tested</span></td><td><code>fuse</code>/<code>fuse-libs</code> only needed by older AppImages</td></tr>
+          <tr><td>Arch / Manjaro</td><td><span class="tag tag-ok">Tested</span></td><td><code>fuse2</code> for pre-2023 bundles</td></tr>
+          <tr><td>openSUSE</td><td><span class="tag tag-ok">Tested</span></td><td><code>fuse</code> + <code>libfuse2</code></td></tr>
+          <tr><td>Silverblue / Kinoite / Bazzite / SteamOS</td><td><span class="tag tag-ok">Tested</span></td><td>User paths only; never writes to <code>/usr</code></td></tr>
+          <tr><td>Everything else</td><td><span class="tag tag-mid">Should work</span></td><td>Any freedesktop desktop qualifies — but untested is untested</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="muted small">
+      Having trouble? <code>appimo doctor</code> explains the failure and the
+      fix — missing <code>unsquashfs</code>, FUSE 2, or a lost execute bit.
+    </p>
+  </div>
+</section>
+
+<!-- ── FAQ ──────────────────────────────────────────────────────── -->
+<section class="section section-alt" id="faq">
+  <div class="wrap wrap-narrow">
+    <h2>Questions people will ask</h2>
+
+    <details class="faq" open>
+      <summary>Is it safe? What does it actually touch?</summary>
+      <p>Nothing outside your home directory. Appimo reads the AppImage, writes
+      one <code>.desktop</code> file and one icon, and moves the file itself.
+      It never runs the app to inspect it and never uses <code>sudo</code>.
+      <code>appimo install --dry-run</code> prints every change before
+      anything happens.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Do I need root?</summary>
+      <p>No. That's a hard rule, not a preference. A GUI app running as root is
+      a security problem, and it creates root-owned files in your home
+      directory. Appimo refuses to run as root rather than risk either.</p>
+    </details>
+
+    <details class="faq">
+      <summary>My AppImage is old and won't mount. Now what?</summary>
+      <p>FUSE 2 was dropped from some newer systems, and pre-2023 AppImages
+      still want it. Appimo detects that and offers <code>--extract</code>
+      instead of mount, or tells you which FUSE package your distro needs.
+      <code>appimo doctor</code> explains the failure instead of dumping a
+      mount error.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What about immutable distros?</summary>
+      <p>That's the case Appimo is designed around: everything is per-user, so
+      it works the same on Silverblue or Bazzite as it does on Arch. Only your
+      application file's location changes. Nothing writes to <code>/usr</code>.</p>
+    </details>
+
+    <details class="faq">
+      <summary>How do I undo it?</summary>
+      <p><code>appimo remove &lt;name&gt;</code>. The launcher, the icon and
+      the AppImage go away. Keep the file with <code>--keep-files</code>.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Why not Gear Lever, AppImageLauncher or appimaged?</summary>
+      <p>They're good, and we've learned from them. Gear Lever is a GUI that
+      also has a CLI; AppImageLauncher installs as a system package with deep
+      hooks; <code>appimaged</code> watches directories behind your back.
+      Appimo's bet is different: a first-class CLI for scripted and headless
+      use, a GUI for everyone else, everything per-user, explicit about what it
+      changes, and honest when it can't.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Is it really every distro?</summary>
+      <p>It should be: only the freedesktop XDG directories are involved, which
+      every desktop honours. The table above separates what we've actually
+      tested from what we merely expect to work, and we'll update it as
+      reports come in.</p>
+    </details>
+
+    <details class="faq">
+      <summary>What's the licence?</summary>
+      <p>GPL-3.0. Fork it, package it, ship it. See
+      <a href="https://github.com/appimo/appimo">the repository</a>.</p>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="/">
+          <img src="assets/appimo-icon-256.png" alt="" width="32" height="32">
+          <span>appimo</span>
+        </a>
+        <p class="muted small">Any AppImage. In your start menu.</p>
+      </div>
+      <nav aria-label="Docs">
+        <h4>Project</h4>
+        <a href="https://github.com/appimo/appimo">Source</a>
+        <a href="https://github.com/appimo/appimo/releases">Releases</a>
+        <a href="https://github.com/appimo/appimo/issues">Issues</a>
+      </nav>
+      <nav aria-label="Legal">
+        <h4>Licence</h4>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a>
+        <a href="https://github.com/appimo/appimo/blob/main/docs/">Documentation</a>
+      </nav>
+    </div>
+    <p class="muted small footer-note">
+      Appimo does not phone home. No analytics on this page, no telemetry in the
+      tool.
+    </p>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

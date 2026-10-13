@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "appimo"
+version = "0.1.0"
+description = "Turn any AppImage into a real application in your start menu."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "Hamza Shahbaz" }]
+keywords = ["appimage", "linux", "desktop", "launcher", "freedesktop", "xdg"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Environment :: X11 Applications :: GTK",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: Desktop Environment",
+  "Topic :: System :: Software Distribution",
+]
+
+# The core has no dependencies at all: reading a bundle uses the system's
+# squashfs-tools, so installing Appimo is a single small package.
+dependencies = []
+
+[project.optional-dependencies]
+gui = ["flet>=1.0"]
+dev = ["flet>=1.0", "pytest>=8", "pillow>=10"]
+
+[project.scripts]
+appimo = "appimo.cli:main"
+
+[project.urls]
+Homepage = "https://appimo.dev"
+Documentation = "https://appimo.dev/docs"
+Source = "https://github.com/appimo/appimo"
+Issues = "https://github.com/appimo/appimo/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/appimo"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/appimo", "packaging", "scripts", "tests", "assets/logo", "README.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# src-layout: lets the suite run from a fresh checkout without installing first.
+pythonpath = ["src"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning:appimo.*"]
