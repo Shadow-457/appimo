@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import desktop, paths, squashfs
+from . import desktop, fetch, paths, squashfs
 from .appimage import Bundle, inspect
 from .errors import AlreadyInstalled, AppimoError, UnreadableBundle
 from .state import InstalledApp, State
@@ -46,6 +46,10 @@ class InstallOptions:
     with_icon: bool = True
     unsafe_extract: bool = False
     timeout: int = 300
+    #: An https:// URL to download instead of reading a local file.
+    url: str = ""
+    #: Replace an existing install even when its hash is unchanged (upgrade).
+    refresh: bool = False
 
 
 @dataclass
@@ -67,6 +71,8 @@ class InstallPlan:
     #: Unpacking supersedes the AppImage; leaving it behind would recreate the
     #: very orphan-in-Downloads problem this tool exists to fix.
     remove_source: bool = False
+    #: SHA-256 of the source bundle, recorded in state for `appimo upgrade`.
+    source_sha256: str = ""
 
     def summary(self) -> list[tuple[str, str]]:
         """Aligned (label, value) rows — the same shape for dry-run and apply."""
@@ -246,6 +252,7 @@ def plan_install(
         warnings=warnings,
         replaced=existing,
         remove_source=options.mode == MODE_EXTRACT and not options.copy,
+        source_sha256=fetch.sha256_of(bundle.source) if bundle.source.is_file() else "",
     )
 
 
@@ -350,7 +357,10 @@ def apply_install(plan: InstallPlan, options: InstallOptions, state: State) -> I
             desktop_file=str(plan.desktop_path),
             managed_path=str(plan.managed_path),
             mode=plan.mode,
-            source=str(plan.bundle.source),
+            # A downloaded bundle records its URL: the temp file is deleted,
+            # and `appimo upgrade` re-downloads from the source.
+            source=options.url or str(plan.bundle.source),
+            sha256=plan.source_sha256,
             icon_files=icon_files,
             version=plan.bundle.metadata.passthrough.get("X-AppImage-Version", ""),
             installed_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),

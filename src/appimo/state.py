@@ -32,6 +32,9 @@ class InstalledApp:
     managed_path: str = ""
     mode: str = "keep"  # "keep" or "extract"
     source: str = ""
+    #: SHA-256 of the source bundle at install time. `appimo upgrade` compares
+    #: against it to decide whether upstream has published something new.
+    sha256: str = ""
     icon_files: list[str] = field(default_factory=list)
     version: str = ""
     installed_at: str = ""

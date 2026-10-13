@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "appimo"
-version = "0.1.0"
+version = "0.2.0"
 description = "Turn any AppImage into a real application in your start menu."
 readme = "README.md"
 requires-python = ">=3.10"

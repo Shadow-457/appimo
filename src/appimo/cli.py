@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from . import __version__, doctor, installer, menu, paths
+from . import __version__, doctor, fetch, installer, menu, paths, upgrade
 from .appimage import inspect
 from .errors import AppimoError, NotInstalled
 from .installer import (
@@ -129,7 +129,34 @@ def cmd_install(args: argparse.Namespace, out: Out) -> int:
     failures = 0
 
     for raw in args.paths:
-        source = Path(raw).expanduser()
+        # An https:// URL is fetched to a temp file first; the record then
+        # points at the URL so `appimo upgrade` can re-download it later.
+        if str(raw).lower().startswith("https://"):
+            if args.dry_run:
+                if args.json:
+                    results.append({"source": str(raw), "ok": True, "dry_run": True,
+                                    "note": "would download and integrate"})
+                else:
+                    out.blank()
+                    out.row("download", str(raw))
+                    out.note("dry run — nothing was downloaded")
+                continue
+            out.blank()
+            out.row("downloading", str(raw))
+            try:
+                source = fetch.fetch(str(raw))
+            except AppimoError as exc:
+                failures += 1
+                if args.json:
+                    results.append({"source": str(raw), "ok": False, "error": exc.message})
+                else:
+                    out.error(exc.message, exc.hint)
+                continue
+            options.url = str(raw)
+            options.force = True
+        else:
+            source = Path(raw).expanduser()
+
         try:
             plan = plan_install(source, options, state)
         except AppimoError as exc:
@@ -139,6 +166,9 @@ def cmd_install(args: argparse.Namespace, out: Out) -> int:
             else:
                 out.blank()
                 out.error(exc.message, exc.hint)
+            if options.url:
+                source.unlink(missing_ok=True)
+                options.url = ""
             continue
 
         if args.dry_run:
@@ -175,6 +205,9 @@ def cmd_install(args: argparse.Namespace, out: Out) -> int:
                 out.blank()
                 out.error(exc.message, exc.hint)
                 out.note("nothing was changed")
+            if options.url:
+                source.unlink(missing_ok=True)
+                options.url = ""
             continue
 
         if args.json:
@@ -374,6 +407,70 @@ def cmd_gui(args: argparse.Namespace, out: Out) -> int:
     return run()
 
 
+def cmd_upgrade(args: argparse.Namespace, out: Out) -> int:
+    state = State.load()
+    apps = state.all()
+    if args.targets:
+        targets = list(args.targets)
+    else:
+        targets = [app.name for app in apps]
+    if not targets:
+        out.blank()
+        out.note("nothing integrated yet; run 'appimo install' first")
+        return 0
+
+    failures = 0
+    changed = 0
+    pending = 0
+    for target in targets:
+        try:
+            plan = upgrade.plan_upgrade(target, state=state, refresh=args.refresh)
+        except AppimoError as exc:
+            failures += 1
+            if args.json:
+                pass
+            else:
+                out.blank()
+                out.error(exc.message, exc.hint)
+            continue
+
+        out.blank()
+        out.row("checking", plan.app.name)
+        out.row("status", plan.summary())
+
+        if plan.action in ("current", "unreachable"):
+            continue
+        if args.dry_run:
+            pending += 1
+            out.note("dry run — nothing was re-integrated")
+            continue
+
+        try:
+            record = upgrade.apply_upgrade(plan, state=state, refresh=args.refresh)
+        except AppimoError as exc:
+            failures += 1
+            out.error(exc.message, exc.hint)
+            continue
+
+        if record is not None:
+            changed += 1
+            out.done(f'"{record.name}" upgraded')
+
+    out.blank()
+    if failures:
+        out.warn(f"{failures} application(s) could not be upgraded")
+    elif args.dry_run:
+        out.note(
+            f"{pending} application(s) would be re-integrated; "
+            "run without --dry-run to apply"
+        )
+    elif changed:
+        out.done(f"{changed} application(s) upgraded")
+    else:
+        out.note("everything already up to date")
+    return 1 if failures else 0
+
+
 def cmd_menu(args: argparse.Namespace, out: Out) -> int:
     if args.remove:
         if menu.remove_own_launcher():
@@ -454,6 +551,21 @@ def build_parser() -> argparse.ArgumentParser:
     doc.add_argument("path", nargs="?", metavar="PATH", help="also inspect this bundle")
     doc.add_argument("--json", action="store_true")
 
+    upgrading = subparsers.add_parser(
+        "upgrade",
+        aliases=["update"],
+        help="re-integrate apps whose source changed (all, or named ones)",
+    )
+    upgrading.add_argument(
+        "targets", nargs="*", metavar="NAME", help="app to upgrade (default: all)"
+    )
+    upgrading.add_argument(
+        "--refresh",
+        action="store_true",
+        help="accept a changed build even if the recorded checksum differs",
+    )
+    add_common(upgrading)
+
     submenu = subparsers.add_parser(
         "menu", help="add Appimo itself to your start menu"
     )
@@ -488,6 +600,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "uninstall": cmd_remove,
         "info": cmd_info,
         "doctor": cmd_doctor,
+        "upgrade": cmd_upgrade,
+        "update": cmd_upgrade,
         "menu": cmd_menu,
         "gui": cmd_gui,
     }
