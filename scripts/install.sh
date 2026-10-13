@@ -7,10 +7,14 @@
 # Python tool installer you already have. It never uses sudo, never writes
 # outside your home directory, and prints everything before it does it.
 #
+# By default it installs straight from the GitHub repository, so it works
+# before a PyPI release exists:
+#
 #   sh install.sh --dry-run        print the plan, change nothing
 #   sh install.sh --uninstall      remove appimo again
-#   sh install.sh --version 0.1.0  pin a version
+#   sh install.sh --version 0.1.0  pin a tag from the repository
 #   sh install.sh --with-gui       include the graphical interface (Flet)
+#   sh install.sh --pypi           install from PyPI instead of GitHub
 #
 # Environment:
 #   APPIMO_PIP_ARGS   extra arguments for the install command
@@ -19,6 +23,8 @@
 set -eu
 
 PKG="appimo"
+REPO_URL="https://github.com/Shadow-457/appimo.git"
+SOURCE="git"
 VERSION=""
 DRY_RUN=0
 UNINSTALL=0
@@ -53,12 +59,13 @@ Appimo installer.
 
 Installs the `appimo` command using whichever Python tool installer you
 already have (uv, pipx or pip). It never uses sudo and never writes outside
-your home directory.
+your home directory. Default source is the GitHub repository.
 
   --dry-run        print the plan, change nothing
   --uninstall      remove appimo again
   --with-gui       include the graphical interface (Flet)
-  --version X      pin an exact version
+  --version X      pin a repository tag (vX)
+  --pypi           install from PyPI instead of GitHub
   -h, --help       this text
 USAGE
     exit 0
@@ -74,6 +81,7 @@ while [ $# -gt 0 ]; do
         --dry-run)     DRY_RUN=1 ;;
         --uninstall|--remove) UNINSTALL=1 ;;
         --with-gui)    WITH_GUI=1 ;;
+        --pypi)        SOURCE="pypi" ;;
         --version)     shift; [ $# -gt 0 ] || die "--version needs a value"; VERSION="$1" ;;
         --version=*)   VERSION="${1#--version=}" ;;
         *)             die "unknown option: $1" "run with --help" ;;
@@ -81,8 +89,14 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-TARGET="$PKG"
-[ -n "$VERSION" ] && TARGET="$PKG==$VERSION"
+# What gets handed to the installer: a PyPI requirement, or a git URL that
+# works with no release published at all. A --version pin means a repo tag.
+case "$SOURCE" in
+    git)  TARGET="git+$REPO_URL"
+          [ -n "$VERSION" ] && TARGET="git+$REPO_URL@v$VERSION" ;;
+    pypi) TARGET="$PKG"
+          [ -n "$VERSION" ] && TARGET="$PKG==$VERSION" ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Environment checks
@@ -160,7 +174,11 @@ fi
 
 say "  ${DIM}method${RESET}   $METHOD"
 say "  ${DIM}package${RESET}  ${TARGET}${EXTRAS}"
-say "  ${DIM}index${RESET}    $PYPI"
+if [ "$SOURCE" = "pypi" ]; then
+    say "  ${DIM}index${RESET}    $PYPI"
+else
+    say "  ${DIM}source${RESET}   GitHub (main)"
+fi
 say ""
 
 # ---------------------------------------------------------------------------

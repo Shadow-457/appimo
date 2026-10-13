@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cp scripts/install.sh landing/install.sh",
   "outputDirectory": "landing",
   "cleanUrls": true,
   "trailingSlash": false,

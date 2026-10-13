@@ -65,8 +65,20 @@ def test_preview_lists_the_plan_and_writes_nothing(gui, bundle: Path) -> None:
 
     app.preview(None)
 
-    labels = [row.controls[0].value for row in app.plan_box.controls if hasattr(row, "controls")]
+    rows = [
+        c
+        for c in app.plan_box.controls
+        if hasattr(c, "controls") and hasattr(c.controls[0], "value")
+    ]
+    labels = [row.controls[0].value for row in rows]
     assert labels == ["reading", "name", "id", "icon", "moved", "launcher"]
+    # The bundle's own icon is shown as a thumbnail at the top of the plan.
+    flat = list(app.plan_box.controls) + [
+        child for c in app.plan_box.controls if hasattr(c, "controls") for child in c.controls
+    ]
+    assert any(
+        getattr(c, "src", None) for c in flat
+    ), "preview should show the icon it found"
     assert bundle.exists(), "preview must not move the file"
     assert not app.state.apps
 

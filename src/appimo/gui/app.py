@@ -15,6 +15,7 @@ steps (`BG` -> `SURFACE` -> `SURFACE_2`), never from outlines.
 from __future__ import annotations
 
 import asyncio
+import base64
 from pathlib import Path
 
 from .. import __version__, paths
@@ -225,6 +226,17 @@ class App:
             border_radius=0,
         )
 
+    def _thumbnail(self, data: bytes, size: int = 28):
+        """An icon preview: base64-embedded, flat, square. Flet 1.0 takes a
+        bare base64 string in `src` (the old src_base64 field is gone)."""
+        ft = self.ft
+        return ft.Image(
+            src=base64.b64encode(data).decode("ascii"),
+            width=size,
+            height=size,
+            fit=ft.BoxFit.CONTAIN,
+        )
+
     # -- options -----------------------------------------------------------
 
     def options(self) -> InstallOptions:
@@ -397,6 +409,12 @@ class App:
                     ]
                 )
             )
+        # A real look at the icon the bundle carries, before anything is
+        # written. SVGs can't go through Image's base64 source; skip those.
+        if plan.icon and "SVG" not in plan.icon.described:
+            self.plan_box.controls.insert(
+                0, ft.Row([self._thumbnail(plan.icon.data)], spacing=8)
+            )
         for warning in plan.warnings:
             self.plan_box.controls.append(ft.Text(f"! {warning}", size=11, color=FAINT))
         self._update()
@@ -469,10 +487,26 @@ class App:
 
         for app in self.state.all():
             mode = "unpacked" if app.mode == MODE_EXTRACT else "kept"
+            # The installed hicolor icon, when we have one; a recessed square
+            # placeholder keeps the rows aligned when we don't.
+            lead: ft.Control
+            icon_bytes = None
+            for icon_file in app.icon_files:
+                if icon_file.endswith(".png"):
+                    try:
+                        icon_bytes = Path(icon_file).read_bytes()
+                    except OSError:  # pragma: no cover - vanished file
+                        icon_bytes = None
+                    break
+            if icon_bytes:
+                lead = self._thumbnail(icon_bytes, size=32)
+            else:
+                lead = ft.Container(width=32, height=32, bgcolor=SURFACE_2)
             self.apps_box.controls.append(
                 ft.Container(
                     content=ft.Row(
                         [
+                            lead,
                             ft.Column(
                                 [
                                     ft.Text(
@@ -494,7 +528,8 @@ class App:
                                 content=ft.Text("Remove", color=PAPER),
                                 on_click=lambda _e, i=app.id: self.remove(i),
                             ),
-                        ]
+                        ],
+                        spacing=14,
                     ),
                     padding=10,
                     bgcolor=SURFACE,
