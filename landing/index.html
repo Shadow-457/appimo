@@ -89,7 +89,11 @@
     <p class="alt-install">
       Prefer to read it first?
       <code>curl -fsSLO https://appimo.vercel.app/install.sh &amp;&amp; less install.sh</code>
-      — or <code>pipx install appimo</code>.
+      — or <code>pipx install 'appimo[gui]'</code>.
+    </p>
+    <p class="copy-status" role="note">
+      Includes the graphical interface and adds Appimo to your start menu.
+      Terminal only? add <code>--no-gui</code> before the <code>| sh</code>.
     </p>
 
     <ul class="chips" aria-label="Supported platforms">
@@ -308,6 +312,19 @@
     <h2>Questions people will ask</h2>
 
     <details class="faq" open>
+      <summary>Does the one-line installer include the GUI?</summary>
+      <p>Yes. The installer includes the graphical interface (Flet and its
+      desktop runtime) and adds Appimo itself to your start menu, so it opens
+      like any other app — no terminal needed. Terminal only? Add
+      <code>--no-gui</code>:
+      <code>curl -fsSL https://appimo.vercel.app/install.sh | sh -s -- --no-gui</code>.
+      Already installed and want the window now? Run
+      <code>pipx install 'appimo[gui]'</code> (or
+      <code>uv tool install 'appimo[gui]'</code>), then <code>appimo menu</code>.
+      </p>
+    </details>
+
+    <details class="faq">
       <summary>Is it safe? What does it actually touch?</summary>
       <p>Nothing outside your home directory. Appimo reads the AppImage, writes
       one <code>.desktop</code> file and one icon, and moves the file itself.

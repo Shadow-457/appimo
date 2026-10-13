@@ -28,8 +28,12 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-gui = ["flet>=1.0"]
-dev = ["flet>=1.0", "pytest>=8", "pillow>=10"]
+# `flet-desktop` is the actual window runtime in Flet 1.x: without it the
+# package can launch a browser view but a desktop window fails with
+# "Unable to install flet-desktop", and the runtime cannot pip-install
+# itself inside uv/pipx's isolated tool environment.
+gui = ["flet>=1.0", "flet-desktop>=1.0"]
+dev = ["flet>=1.0", "flet-desktop>=1.0", "pytest>=8", "pillow>=10"]
 
 [project.scripts]
 appimo = "appimo.cli:main"
@@ -42,6 +46,11 @@ Issues = "https://github.com/Shadow-457/appimo/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/appimo"]
+
+# The GUI's own start-menu entry needs an icon even when installed from a
+# wheel, which never sees the checkout's assets/ directory.
+[tool.hatch.build.targets.wheel.force-include]
+"assets/logo/appimo-icon-256.png" = "appimo/_icons/appimo-icon-256.png"
 
 [tool.hatch.build.targets.sdist]
 include = ["src/appimo", "packaging", "scripts", "tests", "assets/logo", "README.md", "LICENSE"]

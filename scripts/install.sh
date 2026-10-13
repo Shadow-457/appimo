@@ -13,7 +13,7 @@
 #   sh install.sh --dry-run        print the plan, change nothing
 #   sh install.sh --uninstall      remove appimo again
 #   sh install.sh --version 0.1.0  pin a tag from the repository
-#   sh install.sh --with-gui       include the graphical interface (Flet)
+#   sh install.sh --no-gui         skip the graphical interface (Flet)
 #   sh install.sh --pypi           install from PyPI instead of GitHub
 #
 # Environment:
@@ -28,7 +28,7 @@ SOURCE="git"
 VERSION=""
 DRY_RUN=0
 UNINSTALL=0
-WITH_GUI=0
+WITH_GUI=1
 PYPI="${APPIMO_INDEX_URL:-https://pypi.org/simple}"
 
 # ---------------------------------------------------------------------------
@@ -57,13 +57,15 @@ Appimo installer.
 
   curl -fsSL https://appimo.vercel.app/install.sh | sh
 
-Installs the `appimo` command using whichever Python tool installer you
-already have (uv, pipx or pip). It never uses sudo and never writes outside
-your home directory. Default source is the GitHub repository.
+Installs the `appimo` command — including the graphical interface — using
+whichever Python tool installer you already have (uv, pipx or pip). It never
+uses sudo and never writes outside your home directory. Default source is the
+GitHub repository.
 
   --dry-run        print the plan, change nothing
   --uninstall      remove appimo again
-  --with-gui       include the graphical interface (Flet)
+  --no-gui         skip the graphical interface (Flet)
+  --with-gui       kept for compatibility; the GUI is included by default
   --version X      pin a repository tag (vX)
   --pypi           install from PyPI instead of GitHub
   -h, --help       this text
@@ -80,6 +82,7 @@ while [ $# -gt 0 ]; do
         -h|--help)     usage ;;
         --dry-run)     DRY_RUN=1 ;;
         --uninstall|--remove) UNINSTALL=1 ;;
+        --no-gui)      WITH_GUI=0 ;;
         --with-gui)    WITH_GUI=1 ;;
         --pypi)        SOURCE="pypi" ;;
         --version)     shift; [ $# -gt 0 ] || die "--version needs a value"; VERSION="$1" ;;
@@ -141,12 +144,15 @@ fi
 
 EXTRAS=""
 [ "$WITH_GUI" = "1" ] && EXTRAS="[gui]"
+say "  ${DIM}gui${RESET}      $( [ "$WITH_GUI" = "1" ] && printf 'yes' || printf 'no (--no-gui to skip it)' )"
 
 case "$METHOD" in
-    uv)   INSTALL_CMD="uv tool install";   UNINSTALL_CMD="uv tool uninstall";   ;;
-    pipx) INSTALL_CMD="pipx install";      UNINSTALL_CMD="pipx uninstall" ;;
+    uv)   INSTALL_CMD="uv tool install --force"; UNINSTALL_CMD="uv tool uninstall";   ;;
+    pipx) INSTALL_CMD="pipx install --force";      UNINSTALL_CMD="pipx uninstall" ;;
     pip)  INSTALL_CMD="python3 -m pip install --user"; UNINSTALL_CMD="python3 -m pip uninstall -y" ;;
 esac
+# --force means re-running this script upgrades an existing install (or adds
+# the GUI to one) instead of failing with "already installed".
 
 run() {
     if [ "$DRY_RUN" = "1" ]; then
@@ -217,13 +223,31 @@ fi
 
 say ""
 ok "Installed $(appimo --version 2>/dev/null || echo "$PKG")"
+
+# Put Appimo itself in the start menu (the GUI launcher). Best-effort: a
+# headless shell has no applications dir and should not fail the install.
+if [ "$WITH_GUI" = "1" ]; then
+    if step "appimo menu" && appimo menu >/dev/null 2>&1; then
+        ok "Added Appimo to your start menu"
+    else
+        warn "could not add the start-menu entry; run 'appimo menu' later"
+    fi
+fi
+
 say ""
 say "  ${BOLD}Next${RESET}"
 say "    ${DIM}1.${RESET} appimo doctor                      ${DIM}# check the environment${RESET}"
 say "    ${DIM}2.${RESET} appimo install ~/Downloads/Some.AppImage"
-say "    ${DIM}3.${RESET} Launch it from your start menu"
+if [ "$WITH_GUI" = "1" ]; then
+    say "    ${DIM}3.${RESET} Open ${BOLD}Appimo${RESET} from your start menu  ${DIM}# or: appimo gui${RESET}"
+else
+    say "    ${DIM}3.${RESET} Launch it from your start menu"
+fi
 say ""
-if [ "$WITH_GUI" = "0" ]; then
+if [ "$WITH_GUI" = "1" ]; then
+    say "  ${DIM}Terminal only? re-run with --no-gui${RESET}"
+    say ""
+else
     say "  ${DIM}Want a window instead of a terminal? re-run with --with-gui${RESET}"
     say ""
 fi

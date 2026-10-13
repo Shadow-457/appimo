@@ -167,3 +167,36 @@ def test_info_on_a_directory_appdir(sandbox: Path, appdir: Path, capsys) -> None
     out = capsys.readouterr().out
     assert "appdir" in out
     assert "Demo App" in out
+
+
+def test_menu_writes_a_launcher_with_an_icon(sandbox: Path, capsys) -> None:
+    """`appimo menu` puts Appimo itself in the start menu."""
+    assert main(["menu"]) == 0
+    out = capsys.readouterr().out
+    assert "start menu" in out
+
+    entry = paths.applications_dir() / "dev.appimo.appimo.desktop"
+    assert entry.exists()
+    text = entry.read_text(encoding="utf-8")
+    assert "Name=Appimo" in text
+    assert "Exec=" in text and "gui" in text
+    assert "X-Appimo-Managed=true" in text
+    # The icon landed in the user's hicolor theme.
+    assert (paths.hicolor_dir() / "256x256" / "apps" / "dev.appimo.appimo.png").exists()
+
+
+def test_menu_twice_needs_force(sandbox: Path, capsys) -> None:
+    assert main(["menu"]) == 0
+    assert main(["menu"]) == 1
+    assert "already exists" in capsys.readouterr().err
+    assert main(["menu", "--force"]) == 0
+
+
+def test_menu_remove(sandbox: Path, capsys) -> None:
+    assert main(["menu"]) == 0
+    assert main(["menu", "--remove"]) == 0
+    assert not (
+        paths.applications_dir() / "dev.appimo.appimo.desktop"
+    ).exists()
+    assert main(["menu", "--remove"]) == 0
+    assert "was not installed" in capsys.readouterr().out

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from . import __version__, doctor, installer, paths
+from . import __version__, doctor, installer, menu, paths
 from .appimage import inspect
 from .errors import AppimoError, NotInstalled
 from .installer import (
@@ -368,10 +368,27 @@ def cmd_gui(args: argparse.Namespace, out: Out) -> int:
     except ImportError as exc:  # pragma: no cover - optional dependency
         out.error(
             f"the graphical interface needs Flet ({exc})",
-            hint="install it with: pipx install 'appimo[gui]'",
+            hint="re-run the installer, or: pipx install 'appimo[gui]'",
         )
         return 1
     return run()
+
+
+def cmd_menu(args: argparse.Namespace, out: Out) -> int:
+    if args.remove:
+        if menu.remove_own_launcher():
+            out.done("Removed Appimo's own start-menu entry")
+        else:
+            out.note("Appimo's start-menu entry was not installed")
+        return 0
+
+    path, warnings = menu.install_own_launcher(force=args.force)
+    out.row("launcher", str(path))
+    out.row("icon", menu.APP_ID)
+    for warning in warnings:
+        out.warn(warning)
+    out.done("Appimo is now in your start menu")
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -437,6 +454,16 @@ def build_parser() -> argparse.ArgumentParser:
     doc.add_argument("path", nargs="?", metavar="PATH", help="also inspect this bundle")
     doc.add_argument("--json", action="store_true")
 
+    submenu = subparsers.add_parser(
+        "menu", help="add Appimo itself to your start menu"
+    )
+    submenu.add_argument(
+        "--force", action="store_true", help="refresh an existing launcher"
+    )
+    submenu.add_argument(
+        "--remove", action="store_true", help="remove the launcher again"
+    )
+
     subparsers.add_parser("gui", help="start the graphical interface")
     return parser
 
@@ -461,6 +488,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "uninstall": cmd_remove,
         "info": cmd_info,
         "doctor": cmd_doctor,
+        "menu": cmd_menu,
         "gui": cmd_gui,
     }
     try:
