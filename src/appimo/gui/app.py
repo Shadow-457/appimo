@@ -14,6 +14,7 @@ steps (`BG` -> `SURFACE` -> `SURFACE_2`), never from outlines.
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from .. import __version__, paths
@@ -40,6 +41,16 @@ FAINT = "#8B8478"
 #: Path of the mark *relative to assets_dir*. Flet only serves files that live
 #: under `assets_dir`, so an absolute filesystem path would silently 404.
 LOGO_RELATIVE = "logo/appimo-icon-256.png"
+
+#: The app's typeface, bundled under assets/fonts/. The site's stack resolves
+#: to Noto Sans on most Linux desktops, so the app uses the real thing — the
+#: same face everywhere, installed or not.
+FONT_FAMILY = "Noto Sans"
+FONT_FILES = {
+    FONT_FAMILY: "fonts/NotoSans-Regular.ttf",
+    f"{FONT_FAMILY} Medium": "fonts/NotoSans-Medium.ttf",
+    f"{FONT_FAMILY} Bold": "fonts/NotoSans-Bold.ttf",
+}
 
 
 def assets_root() -> Path | None:
@@ -93,7 +104,16 @@ def _apply_theme(page) -> None:
         ft = _ft
 
     try:
+        # The bundled Noto Sans faces, when running from a checkout that has
+        # them. Without an assets dir (installed wheel) Flutter's default
+        # stays in force, which is close enough not to matter.
+        root = assets_root()
+        if root and (root / "fonts/NotoSans-Regular.ttf").exists():
+            page.fonts = {
+                family: f"/{relative}" for family, relative in FONT_FILES.items()
+            }
         page.theme = ft.Theme(
+            font_family=FONT_FAMILY,
             color_scheme=ft.ColorScheme(
                 primary=PAPER,
                 on_primary=BG,
@@ -174,6 +194,15 @@ class App:
         self.plan_box = ft.Column(spacing=4)
         self.apps_box = ft.Column(spacing=8)
         self.status = ft.Text("", size=12, color=MUTED)
+        # Flat indeterminate bar: sharp corners, tone-step track, no accents.
+        self.progress = ft.ProgressBar(
+            visible=False,
+            bar_height=6,
+            color=PAPER,
+            bgcolor=SURFACE_2,
+            border_radius=0,
+        )
+        self.action_buttons: list = []
 
     # -- styles ------------------------------------------------------------
 
@@ -229,6 +258,22 @@ class App:
             )
         )
 
+        # One root surface in the page background, so the whole window is the
+        # base tone regardless of the host's default theme.
+        preview_button = ft.Button(
+            content=ft.Text("Preview"),
+            icon=ft.Icons.SEARCH,
+            style=self._button_style(primary=False),
+            on_click=self.preview,
+        )
+        integrate_button = ft.FilledButton(
+            content=ft.Text("Integrate"),
+            icon=ft.Icons.ADD,
+            style=self._button_style(primary=True),
+            on_click=self.integrate,
+        )
+        self.action_buttons = [preview_button, integrate_button]
+
         body = [
             ft.Container(
                 content=ft.Row(header_children, spacing=14),
@@ -253,21 +298,12 @@ class App:
             ),
             ft.Row(
                 [
-                    ft.Button(
-                        content=ft.Text("Preview"),
-                        icon=ft.Icons.SEARCH,
-                        style=self._button_style(primary=False),
-                        on_click=self.preview,
-                    ),
-                    ft.FilledButton(
-                        content=ft.Text("Integrate"),
-                        icon=ft.Icons.ADD,
-                        style=self._button_style(primary=True),
-                        on_click=self.integrate,
-                    ),
+                    preview_button,
+                    integrate_button,
                 ],
                 spacing=10,
             ),
+            self.progress,
             self._panel(
                 [
                     ft.Text("What will change", weight=ft.FontWeight.BOLD, size=13, color=PAPER),
@@ -365,19 +401,43 @@ class App:
             self.plan_box.controls.append(ft.Text(f"! {warning}", size=11, color=FAINT))
         self._update()
 
-    def integrate(self, _event) -> None:
-        raw = (self.path_field.value or "").strip()
-        if not raw:
-            self._notify("Choose an AppImage first.", error=True)
-            return
+    # -- busy state ---------------------------------------------------------
 
+    def _set_busy(self, busy: bool, message: str = "") -> None:
+        """Show the progress bar and disable the action buttons while working."""
+        self.progress.visible = busy
+        for button in self.action_buttons:
+            button.disabled = busy
+        self.status.value = message
+        self._update()
+
+    def _do_integrate(self, raw: str):
+        """The blocking half of integrate, run off the UI thread."""
         source = Path(raw).expanduser()
         options = self.options()
         try:
             plan = plan_install(source, options, self.state)
             record = apply_install(plan, options, self.state)
+            return record, None
         except AppimoError as exc:
-            self._notify(exc.message, error=True)
+            return None, exc
+
+    async def integrate(self, _event) -> None:
+        raw = (self.path_field.value or "").strip()
+        if not raw:
+            self._notify("Choose an AppImage first.", error=True)
+            return
+
+        # unsquashfs can take seconds on a big bundle; keep the window
+        # responsive and the bar animating by doing the work in a thread.
+        self._set_busy(True, "Reading and integrating the bundle…")
+        try:
+            record, error = await asyncio.to_thread(self._do_integrate, raw)
+        finally:
+            self._set_busy(False)
+
+        if error is not None:
+            self._notify(error.message, error=True)
             return
 
         self.path_field.value = ""

@@ -37,8 +37,8 @@ appimo = "appimo.cli:main"
 [project.urls]
 Homepage = "https://appimo.dev"
 Documentation = "https://appimo.dev/docs"
-Source = "https://github.com/appimo/appimo"
-Issues = "https://github.com/appimo/appimo/issues"
+Source = "https://github.com/Shadow-457/appimo"
+Issues = "https://github.com/Shadow-457/appimo/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/appimo"]

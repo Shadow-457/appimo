@@ -7,6 +7,7 @@ code paths without needing a display server.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -88,7 +89,7 @@ def test_integrate_then_remove(gui, bundle: Path) -> None:
     app, _page = gui
     app.path_field.value = str(bundle)
 
-    app.integrate(None)
+    asyncio.run(app.integrate(None))
     assert "Launch" in app.status.value
     assert app.path_field.value == "", "the field should be cleared after a successful install"
     assert len(app.state.apps) == 1
@@ -102,7 +103,7 @@ def test_integrate_then_remove(gui, bundle: Path) -> None:
 def test_integrate_without_a_path_warns(gui) -> None:
     app, page = gui
     app.path_field.value = ""
-    app.integrate(None)
+    asyncio.run(app.integrate(None))
     assert "Choose an AppImage" in app.status.value
     assert page.dialogs, "errors should surface as a snackbar"
 
@@ -110,10 +111,10 @@ def test_integrate_without_a_path_warns(gui) -> None:
 def test_double_integrate_reports_the_conflict(gui, bundle: Path) -> None:
     app, _page = gui
     app.path_field.value = str(bundle)
-    app.integrate(None)
+    asyncio.run(app.integrate(None))
 
     app.path_field.value = str(bundle)
-    app.integrate(None)
+    asyncio.run(app.integrate(None))
     assert "already integrated" in app.status.value
 
 
